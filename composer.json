@@ -1,0 +1,27 @@
+{
+    "name": "pendant59/quicksendmail",
+    "description": "Send mail library based on PHPMailer",
+    "type": "library",
+    "require": {
+        "php": ">=7.0.0",
+        "phpmailer/phpmailer": ">=6.0.0"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "pendant59",
+            "email": "pendant59@qq.com"
+        }
+    ],
+    "keywords": [
+        "mail",
+        "php",
+        "quickSendEmail"
+    ],
+    "homepage": "https://github.com/Pendant59/quickSendEmail",
+    "autoload": {
+        "psr-4": {
+            "quicksendemail\\": "src/"
+        }
+    }
+}
