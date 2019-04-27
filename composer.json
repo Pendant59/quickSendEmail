@@ -16,7 +16,7 @@
     "keywords": [
         "mail",
         "php",
-        "quickSendEmail"
+        "quicksendemail"
     ],
     "homepage": "https://github.com/Pendant59/quickSendEmail",
     "autoload": {

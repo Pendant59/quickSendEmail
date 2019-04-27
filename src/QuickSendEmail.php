@@ -9,8 +9,13 @@ class QuickSendEmail
      * @var null
      */
     protected $mail = null;
-    # html 图片标志位
+    # html 内嵌图片标志位
     public $has_image = false;
+    # 错误信息
+    public $error_msg = [
+        'picture_error' => [],
+        'mail_error' => [],
+    ];
 
     /**
      * @var array
@@ -25,7 +30,7 @@ class QuickSendEmail
             'SenderName' => null,               # 发件人名称
         ],
         'optional' => [
-            'IsHtml' => true,                   # 内容是否为html格式
+            'IsHtml' => true,                   # 内容是否为html格式 - 默认即可(纯文本的内容也没有影响)
         ]
     ];
 
@@ -40,11 +45,23 @@ class QuickSendEmail
     }
 
     /**
+     * 获取配置参数
      * @return array
      */
     public function getConfig()
     {
         return $this->smtp_config;
+    }
+
+    /**
+     * 设置配置参数
+     * @param array $self_config
+     * @return $this
+     */
+    public function setConfig(array $self_config)
+    {
+        $this->smtp_config = array_merge($this->smtp_config, $self_config);
+        return $this;
     }
 
     /**
@@ -74,16 +91,19 @@ class QuickSendEmail
 
     /**
      * 添加html内容图片
-     * @param array $image_msg
+     * @param array $image_msg 0：文件完整路径包含文件名, 1：cid名称, 2：覆盖附件名称
      * @return $this
      */
-    public function addImage(array $image_msg)
+    public function addHtmlImage(array $image_msg)
     {
         if (is_array($image_msg) && !empty($image_msg)) {
             foreach ($image_msg as $image) {
                 if (file_exists($image[0])) {
+                    # 0文件完整路径包含文件名, 1cid名称, 2自定义文件名
                     $this->mail->addembeddedimage($image[0], $image[1], $image[2]);
                     $this->has_image = true;
+                }else{
+                    $this->error_msg['picture_error'] = $image[0] . ' 不存在';
                 }
             }
         }
@@ -92,7 +112,7 @@ class QuickSendEmail
 
     /**
      * 发送邮件
-     * @param array| string $recipient          收件人地址
+     * @param array|string $recipient          收件人地址
      * @param string $subject                   邮件主题
      * @param string $content                   邮件内容
      * @param null|array|string $attachment     附件完整路径
@@ -102,7 +122,7 @@ class QuickSendEmail
     public function sendSmtp($recipient, string $subject, string $content, $attachment = null)
     {
         if (!$this->checkConfig()) {
-            return $this->api_return(400, '参数不可为空');
+            return $this->api_return(400, 'necessary中的参数不可为空');
         }
 
         $this->mail->isSMTP();
@@ -136,7 +156,6 @@ class QuickSendEmail
             }
         }
 
-        $err_msg = [];
         # 收件人处理
         if (is_array($recipient) && !empty($recipient)) {
             foreach ($recipient as $receiver) {
@@ -145,7 +164,7 @@ class QuickSendEmail
                 if ($result) {
                     return $this->api_return(200);
                 }else{
-                    $err_msg[$receiver] = $this->mail->ErrorInfo;
+                    $this->error_msg['mail_error'][$receiver] = $this->mail->ErrorInfo;
                 }
             }
         }else if (is_string($recipient)) {
@@ -154,7 +173,7 @@ class QuickSendEmail
             if ($result) {
                 return $this->api_return(200);
             }else{
-                $err_msg[$recipient] = $this->mail->ErrorInfo;
+                $this->error_msg['mail_error'][$recipient] = $this->mail->ErrorInfo;
             }
         } else {
             return $this->api_return(
@@ -162,7 +181,9 @@ class QuickSendEmail
                 '收件人地址错误'
             );
         }
-        return $this->api_return(200, '', $err_msg);
+
+
+        return $this->api_return(200, '', $this->error_msg);
     }
 
     /**
